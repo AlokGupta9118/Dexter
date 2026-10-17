@@ -55,10 +55,10 @@ export function AuthScreen() {
 
   return (
     <main className="auth-layout">
-      <section className="auth-art" aria-label="Nexus introduction">
+      <section className="auth-art" aria-label="Dexter introduction">
         <div className="brand">
           <div className="brand-mark"><Sparkles size={20} /></div>
-          <div><strong>NEXUS</strong><span>PERSONAL INTELLIGENCE</span></div>
+          <div><strong>Dexter</strong><span>PERSONAL INTELLIGENCE</span></div>
         </div>
         <div className="auth-art-copy">
           <div className="big-orb"><BrainCircuit size={30} /></div>
@@ -80,7 +80,7 @@ export function AuthScreen() {
       <section className="auth-main">
         <div className="auth-theme-toggle"><ThemeToggle /></div>
         <div className="auth-card">
-          <div className="auth-mobile-brand"><div className="brand-mark"><Sparkles size={20} /></div><strong>NEXUS</strong></div>
+          <div className="auth-mobile-brand"><div className="brand-mark"><Sparkles size={20} /></div><strong>Dexter</strong></div>
           <div className="eyebrow">WELCOME TO YOUR WORKSPACE</div>
           <h2>
           {tab === "login"
@@ -159,7 +159,7 @@ export function AuthScreen() {
         <div className="auth-switch">
           {tab === "login" ? (
             <>
-              New to Nexus?{" "}
+              New to Dexter?{" "}
               <button onClick={() => { setTab("signup"); setError(""); setNotice(""); }}>
                 Create an account
               </button>

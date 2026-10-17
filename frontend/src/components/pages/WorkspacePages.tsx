@@ -85,7 +85,7 @@ export function WorkspacePages(p: Props) {
             <section className="chat-page">
               <div className="chat-title-row">
                 <div>
-                  <div className="eyebrow"><Sparkles size={14} /> NEXUS AI WORKSPACE</div>
+                  <div className="eyebrow"><Sparkles size={14} /> Dexter AI WORKSPACE</div>
                   <h1>What are we working on?</h1>
                   <p className="subhead">
                     Switch specialists while keeping the same conversation.
@@ -113,7 +113,7 @@ export function WorkspacePages(p: Props) {
                   {messages.length === 0 && (
                     <div className="chat-empty">
                       <Sparkles size={28} />
-                      <h2>How can Nexus help?</h2>
+                      <h2>How can Dexter help?</h2>
                       <p>Ask a question, work on code, learn a concept, or plan a trip.</p>
                     </div>
                   )}
@@ -128,7 +128,7 @@ export function WorkspacePages(p: Props) {
                       </div>
                       <div className="message-body">
                         <div className="message-meta">
-                          {message.role === "assistant" ? "Nexus" : "You"}
+                          {message.role === "assistant" ? "Dexter" : "You"}
                           {message.mode && <span className="tiny-tag">{message.mode}</span>}
                         </div>
                         <div className="message-text">{message.content}</div>
@@ -136,7 +136,7 @@ export function WorkspacePages(p: Props) {
                     </div>
                   ))}
 
-                  {busy && <p className="typing">Nexus is thinking…</p>}
+                  {busy && <p className="typing">Dexter is thinking…</p>}
                 </div>
 
                 <form className="composer" onSubmit={sendMessage}>
@@ -149,7 +149,7 @@ export function WorkspacePages(p: Props) {
                         void sendMessage();
                       }
                     }}
-                    placeholder="Message Nexus… (Enter to send, Shift + Enter for a new line)"
+                    placeholder="Message Dexter… (Enter to send, Shift + Enter for a new line)"
                     rows={3}
                     maxLength={20000}
                     disabled={busy}
