@@ -10,9 +10,8 @@ import { Topbar } from "./components/layout/Topbar";
 import { WorkspacePages } from "./components/pages/WorkspacePages";
 import { MySpace } from "./components/pages/MySpace";
 import "./my-space.css";
-import { modes } from "./config/workspace";
 import { errorMessage, normalizeConversations, readItems } from "./lib/workspace";
-import type { Action, Conversation, Json, Memory, Message, Mode, Page } from "./types/workspace";
+import type { Conversation, Json, Memory, Message, Mode, Page } from "./types/workspace";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
 
@@ -34,7 +33,6 @@ export default function App() {
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [memories, setMemories] = useState<Memory[]>([]);
-  const [actions, setActions] = useState<Action[]>([]);
   const [agents, setAgents] = useState<any[]>([]);
 
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
@@ -47,11 +45,6 @@ export default function App() {
   const [editingMemory, setEditingMemory] = useState<Memory | null>(null);
   const [memorySearch, setMemorySearch] = useState("");
 
-  const [actionKind, setActionKind] = useState("reminder");
-  const [actionTitle, setActionTitle] = useState("");
-  const [actionDetails, setActionDetails] = useState("");
-  const [actionDate, setActionDate] = useState("");
-  const [decisionNotes, setDecisionNotes] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!auth) {
@@ -156,7 +149,7 @@ export default function App() {
       api<any>("/v1/agents"),
     ]);
 
-    const [me, conv, mem, act, agentResult] = results;
+    const [me, conv, mem, agentResult] = results;
 
     if (me.status === "fulfilled") {
       const p = me.value.profile || {};
@@ -178,9 +171,6 @@ export default function App() {
       setMemories(readItems<Memory>(mem.value, "items"));
     }
 
-    if (act.status === "fulfilled") {
-      setActions(readItems<Action>(act.value, "items"));
-    }
 
     if (agentResult.status === "fulfilled") {
       setAgents(readItems<any>(agentResult.value, "agents"));
@@ -204,7 +194,6 @@ export default function App() {
       setProfile({});
       setConversations([]);
       setMemories([]);
-      setActions([]);
       setAgents([]);
       setMessages([]);
       setActiveConversation(null);
@@ -418,104 +407,6 @@ export default function App() {
     }
   };
 
-  const createAction = async (event: FormEvent) => {
-    event.preventDefault();
-
-    if (!actionTitle.trim() || busy) return;
-
-    let details: Json = {};
-
-    if (actionDetails.trim()) {
-      try {
-        details = JSON.parse(actionDetails);
-      } catch {
-        details = { notes: actionDetails.trim() };
-      }
-    }
-
-    setBusy(true);
-    setError("");
-
-    try {
-      await api("/v1/actions", {
-        method: "POST",
-        body: JSON.stringify({
-          kind: actionKind,
-          title: actionTitle.trim(),
-          details,
-          scheduled_at: actionDate
-            ? new Date(actionDate).toISOString()
-            : null,
-        }),
-      });
-
-      setActionTitle("");
-      setActionDetails("");
-      setActionDate("");
-
-      const data = await api<any>("/v1/actions");
-      setActions(readItems<Action>(data, "items"));
-      setNotice("Action submitted for review. Nothing was executed.");
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const decideAction = async (action: Action, approved: boolean) => {
-    if (busy) return;
-
-    const decision = approved ? "approve" : "reject";
-
-    if (
-      !window.confirm(
-        approved
-          ? `Approve "${action.title}"? This records approval; it does not guarantee execution.`
-          : `Reject "${action.title}"?`
-      )
-    ) {
-      return;
-    }
-
-    setBusy(true);
-    setError("");
-
-    try {
-      const result = await api<any>(
-        `/v1/actions/${encodeURIComponent(action.id)}/decision`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            approved,
-            note: decisionNotes[action.id] || "",
-          }),
-        }
-      );
-
-      setActions((previous) =>
-        previous.map((item) =>
-          item.id === action.id
-            ? {
-                ...item,
-                state: result.state || (approved ? "approved" : "rejected"),
-                decision_note: decisionNotes[action.id] || "",
-              }
-            : item
-        )
-      );
-
-      setNotice(
-        result.message ||
-          `Decision recorded: ${decision}. External execution is separate.`
-      );
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const deleteConversation = async (id: string) => {
     if (!window.confirm("Delete this conversation and its messages?")) return;
 
@@ -554,9 +445,6 @@ export default function App() {
     [memories, memorySearch]
   );
 
-  const pendingCount = actions.filter(
-    (action) => action?.state === "pending_approval"
-  ).length;
 
   const displayName =
     profile.display_name ||
@@ -597,7 +485,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <Sidebar page={page} setPage={(nextPage) => { setPage(nextPage); setError(""); }} pendingCount={pendingCount} displayName={displayName} user={user} newChat={newChat} onSignOut={() => void signOut(auth!)} />
+      <Sidebar page={page} setPage={(nextPage) => { setPage(nextPage === "actions" ? "overview" : nextPage); setError(""); }} pendingCount={0} displayName={displayName} user={user} newChat={newChat} onSignOut={() => void signOut(auth!)} />
       <main className="main-area">
         <Topbar page={page} busy={busy} onRefresh={() => void refresh()} />
         <div className="page-content">
@@ -607,7 +495,7 @@ export default function App() {
           {page === "my-space" ? (
             <MySpace api={api} displayName={displayName} />
           ) : (
-            <WorkspacePages page={page} displayName={displayName} conversations={conversations} memories={memories} pendingCount={pendingCount} agents={agents} setMode={setMode} newChat={newChat} setPage={setPage} loadConversation={loadConversation} mode={mode} messages={messages} busy={busy} draft={draft} setDraft={setDraft} sendMessage={sendMessage} deleteConversation={deleteConversation} memoryText={memoryText} setMemoryText={setMemoryText} memoryCategory={memoryCategory} setMemoryCategory={setMemoryCategory} editingMemory={editingMemory} saveMemory={saveMemory} setEditingMemory={setEditingMemory} memorySearch={memorySearch} setMemorySearch={setMemorySearch} filteredMemories={filteredMemories} deleteMemory={deleteMemory} actionKind={actionKind} setActionKind={setActionKind} actionTitle={actionTitle} setActionTitle={setActionTitle} actionDate={actionDate} setActionDate={setActionDate} actionDetails={actionDetails} setActionDetails={setActionDetails} createAction={createAction} actions={actions} decisionNotes={decisionNotes} setDecisionNotes={setDecisionNotes} decideAction={decideAction} profileName={profileName} setProfileName={setProfileName} user={user} timezone={timezone} setTimezone={setTimezone} goalsText={goalsText} setGoalsText={setGoalsText} saveProfile={saveProfile} />
+            <WorkspacePages page={page} displayName={displayName} conversations={conversations} memories={memories} agents={agents} setMode={setMode} newChat={newChat} setPage={setPage} loadConversation={loadConversation} mode={mode} messages={messages} busy={busy} draft={draft} setDraft={setDraft} sendMessage={sendMessage} deleteConversation={deleteConversation} memoryText={memoryText} setMemoryText={setMemoryText} memoryCategory={memoryCategory} setMemoryCategory={setMemoryCategory} editingMemory={editingMemory} saveMemory={saveMemory} setEditingMemory={setEditingMemory} memorySearch={memorySearch} setMemorySearch={setMemorySearch} filteredMemories={filteredMemories} deleteMemory={deleteMemory} profileName={profileName} setProfileName={setProfileName} user={user} timezone={timezone} setTimezone={setTimezone} goalsText={goalsText} setGoalsText={setGoalsText} saveProfile={saveProfile} />
           )}
         </div>
       </main>

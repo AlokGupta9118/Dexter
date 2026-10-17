@@ -1,25 +1,23 @@
-import { BookOpen, Bot, Brain, Check, Code2, LogOut, MessageSquare, Plane, Plus, Search, Send, Settings, ShieldCheck, Sparkles, Trash2, UserRound, X } from "lucide-react";
+import { LogOut, MessageSquare, Plus, Send, ShieldCheck, Sparkles, Trash2, UserRound } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { auth } from "../../firebase";
 import { modes, categories } from "../../config/workspace";
 import { formatDate } from "../../lib/workspace";
-import type { Action, Conversation, Memory, Message, Mode, Page } from "../../types/workspace";
+import type { Conversation, Memory, Message, Mode, Page } from "../../types/workspace";
 import { StatCard } from "../ui/StatCard";
 import { ThemeToggle } from "../ui/ThemeToggle";
 type Props = {
-  page: Page; displayName: string; conversations: Conversation[]; memories: Memory[]; pendingCount: number; agents: any[];
+  page: Page; displayName: string; conversations: Conversation[]; memories: Memory[]; agents: any[];
   setMode: (mode: Mode) => void; newChat: () => void; setPage: (page: Page) => void; loadConversation: (id: string) => void;
   mode: Mode; messages: Message[]; busy: boolean; draft: string; setDraft: (value: string) => void; sendMessage: (event?: any) => void;
   deleteConversation: (id: string) => void; memoryText: string; setMemoryText: (value: string) => void; memoryCategory: string; setMemoryCategory: (value: string) => void;
   editingMemory: Memory | null; saveMemory: (event: any) => void; setEditingMemory: (value: Memory | null) => void; memorySearch: string; setMemorySearch: (value: string) => void;
-  filteredMemories: Memory[]; deleteMemory: (memory: Memory) => void; actionKind: string; setActionKind: (value: string) => void; actionTitle: string; setActionTitle: (value: string) => void;
-  actionDate: string; setActionDate: (value: string) => void; actionDetails: string; setActionDetails: (value: string) => void; createAction: (event: any) => void; actions: Action[];
-  decisionNotes: Record<string, string>; setDecisionNotes: (value: any) => void; decideAction: (action: Action, approved: boolean) => void; profileName: string; setProfileName: (value: string) => void;
+  filteredMemories: Memory[]; deleteMemory: (memory: Memory) => void; profileName: string; setProfileName: (value: string) => void;
   user: any; timezone: string; setTimezone: (value: string) => void; goalsText: string; setGoalsText: (value: string) => void; saveProfile: (event: any) => void;
 };
 
 export function WorkspacePages(p: Props) {
-  const { page, displayName, conversations, memories, pendingCount, agents, setMode, newChat, setPage, loadConversation, mode, messages, busy, draft, setDraft, sendMessage, deleteConversation, memoryText, setMemoryText, memoryCategory, setMemoryCategory, editingMemory, saveMemory, setEditingMemory, memorySearch, setMemorySearch, filteredMemories, deleteMemory, actionKind, setActionKind, actionTitle, setActionTitle, actionDate, setActionDate, actionDetails, setActionDetails, createAction, actions, decisionNotes, setDecisionNotes, decideAction, profileName, setProfileName, user, timezone, setTimezone, goalsText, setGoalsText, saveProfile } = p;
+  const { page, displayName, conversations, memories, agents, setMode, newChat, setPage, loadConversation, mode, messages, busy, draft, setDraft, sendMessage, deleteConversation, memoryText, setMemoryText, memoryCategory, setMemoryCategory, editingMemory, saveMemory, setEditingMemory, memorySearch, setMemorySearch, filteredMemories, deleteMemory, profileName, setProfileName, user, timezone, setTimezone, goalsText, setGoalsText, saveProfile } = p;
   return (
     <>
       <div className="theme-toggle-row"><ThemeToggle /></div>
@@ -34,7 +32,6 @@ export function WorkspacePages(p: Props) {
               <div className="stat-grid">
                 <StatCard label="Conversations" value={conversations.length} />
                 <StatCard label="Tell Us About You" value={memories.length} />
-                <StatCard label="Awaiting approval" value={pendingCount} />
                 <StatCard label="Agents reported" value={agents.length} />
               </div>
 
@@ -167,7 +164,6 @@ export function WorkspacePages(p: Props) {
               </div>
 
               <p className="fine-print">
-                Approval records do not guarantee that external actions have executed.
               </p>
             </section>
           )}
@@ -308,123 +304,6 @@ export function WorkspacePages(p: Props) {
             </section>
           )}
 
-          {page === "actions" && (
-            <section>
-              <h1>Approval center</h1>
-              <p className="subhead">
-                Review proposed actions. Approval is a decision record, not proof of execution.
-              </p>
-
-              <div className="two-column">
-                <form className="panel form-panel" onSubmit={createAction}>
-                  <h3>Propose an action</h3>
-
-                  <label htmlFor="action-kind">Action type</label>
-                  <select
-                    id="action-kind"
-                    value={actionKind}
-                    onChange={(event) => setActionKind(event.target.value)}
-                  >
-                    {["reminder", "event", "booking", "external_action"].map((kind) => (
-                      <option key={kind} value={kind}>{kind}</option>
-                    ))}
-                  </select>
-
-                  <label htmlFor="action-title">Title</label>
-                  <input
-                    id="action-title"
-                    required
-                    maxLength={240}
-                    value={actionTitle}
-                    onChange={(event) => setActionTitle(event.target.value)}
-                  />
-
-                  <label htmlFor="action-date">Schedule (optional)</label>
-                  <input
-                    id="action-date"
-                    type="datetime-local"
-                    value={actionDate}
-                    onChange={(event) => setActionDate(event.target.value)}
-                  />
-
-                  <label htmlFor="action-details">Details (optional)</label>
-                  <textarea
-                    id="action-details"
-                    rows={4}
-                    value={actionDetails}
-                    onChange={(event) => setActionDetails(event.target.value)}
-                    placeholder='Notes or JSON, e.g. {"destination":"Tokyo"}'
-                  />
-
-                  <button className="primary-button" disabled={busy || !actionTitle.trim()}>
-                    Submit for review
-                  </button>
-                </form>
-
-                <div className="panel">
-                  <h3>Action queue ({pendingCount} pending)</h3>
-
-                  {actions.map((action) => (
-                    <div className="action-item" key={action.id}>
-                      <div className="action-item-head">
-                        <ShieldCheck size={18} />
-                        <div className="row-main">
-                          <b>{action.title}</b>
-                          <span>{action.kind} · {formatDate(action.created_at || action.scheduled_at)}</span>
-                        </div>
-                        <span className={`state-pill ${action.state}`}>
-                          {String(action.state || "unknown").replace(/_/g, " ")}
-                        </span>
-                      </div>
-
-                      {action.details && (
-                        <pre className="details-block">
-                          {JSON.stringify(action.details, null, 2)}
-                        </pre>
-                      )}
-
-                      {action.state === "pending_approval" ? (
-                        <>
-                          <textarea
-                            rows={2}
-                            value={decisionNotes[action.id] || ""}
-                            onChange={(event) =>
-                              setDecisionNotes((previous) => ({
-                                ...previous,
-                                [action.id]: event.target.value,
-                              }))
-                            }
-                            placeholder="Optional decision note"
-                          />
-
-                          <div className="decision-buttons">
-                            <button
-                              className="approve-button"
-                              onClick={() => void decideAction(action, true)}
-                              disabled={busy}
-                            >
-                              <Check size={15} /> Approve
-                            </button>
-                            <button
-                              className="reject-button"
-                              onClick={() => void decideAction(action, false)}
-                              disabled={busy}
-                            >
-                              <X size={15} /> Reject
-                            </button>
-                          </div>
-                        </>
-                      ) : (
-                        <p>{action.decision_note || "Decision recorded."}</p>
-                      )}
-                    </div>
-                  ))}
-
-                  {actions.length === 0 && <p>No actions in the queue.</p>}
-                </div>
-              </div>
-            </section>
-          )}
 
           {page === "profile" && (
             <section>
@@ -468,7 +347,6 @@ export function WorkspacePages(p: Props) {
                 <h3><ShieldCheck size={18} /> Privacy and safety</h3>
                 <p>API requests are authenticated using Firebase ID tokens.</p>
                 <p>Memories require consent when created.</p>
-                <p>External actions require backend-side approval enforcement and execution logic.</p>
                 <button className="secondary-button" onClick={() => { if (auth) void signOut(auth); }}>
                   <LogOut size={16} /> Sign out
                 </button>
