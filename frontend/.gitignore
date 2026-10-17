@@ -1,0 +1,25 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+!.env.sample
+# Private credentials
+secret/
+secrets/
+**/*service-account*.json
+**/firebase-adminsdk*.json
+# JavaScript
+node_modules/
+dist/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local databases and runtime files
+*.db
+*.sqlite
+*.sqlite3
+logs/

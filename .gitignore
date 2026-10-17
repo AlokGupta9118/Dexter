@@ -1,0 +1,39 @@
+@'
+# Secrets and environment variables
+backend/secrets/
+secret/
+secrets/
+.env
+.env.*
+!.env.example
+
+# Firebase service account credentials
+**/firebase-service-account.json
+**/*service-account*.json
+**/firebase-adminsdk*.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node.js
+node_modules/
+dist/
+
+# Local databases and runtime files
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+'@ | Set-Content -Encoding utf8 .gitignore
+# TypeScript build artifacts
+*.tsbuildinfo

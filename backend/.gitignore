@@ -1,0 +1,30 @@
+@'
+
+# Secrets and environment files
+secret/
+secrets/
+**/secret/
+**/secrets/
+.env
+.env.*
+!.env.example
+
+# Firebase service-account credentials
+**/*service-account*.json
+**/firebase-adminsdk*.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node
+node_modules/
+dist/
+
+# Local databases and runtime files
+*.db
+*.sqlite
+*.sqlite3
+'@ | Add-Content .gitignore
