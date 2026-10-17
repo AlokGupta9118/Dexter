@@ -17,7 +17,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     firebase_project_id: str = ""
     firebase_service_account_path: str = ""
-    cors_origins: str = "http://localhost:5173"
+    # Set CORS_ORIGINS in Render to your stable Vercel production URL(s),
+    # comma-separated. The current deployment URL is included as a fallback.
+    cors_origins: str = (
+        "http://localhost:5173,"
+        "https://dexter-1xmv8tm11-alokguptas-projects.vercel.app"
+    )
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     @property
@@ -29,17 +34,32 @@ settings = Settings()
 
 
 def initialize_firebase():
+    """Initialize Firebase Admin using a Render Secret File or ADC credentials."""
     try:
         fb_app = firebase_admin.get_app()
     except ValueError:
-        path = settings.firebase_service_account_path or os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
+        path = (
+            settings.firebase_service_account_path.strip()
+            or os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "").strip()
+        )
         options = {"projectId": settings.firebase_project_id} if settings.firebase_project_id else None
+
         if path:
             if not os.path.isfile(path):
-                raise RuntimeError("Firebase service-account file not found; check backend/.env.")
-            fb_app = firebase_admin.initialize_app(credentials.Certificate(path), options=options)
+                raise RuntimeError(
+                    "Firebase service-account file not found at configured path. "
+                    "On Render, set FIREBASE_SERVICE_ACCOUNT_PATH to the Secret File path, "
+                    "for example /etc/secrets/firebase-service-account.json."
+                )
+            fb_app = firebase_admin.initialize_app(
+                credentials.Certificate(path),
+                options=options,
+            )
         else:
+            # This works when the hosting environment provides Application Default
+            # Credentials. Otherwise configure FIREBASE_SERVICE_ACCOUNT_PATH.
             fb_app = firebase_admin.initialize_app(options=options)
+
     return fb_app, firestore.client(app=fb_app)
 
 
@@ -53,8 +73,11 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    # Authorization is required for Firebase ID tokens; include common headers
+    # so browser preflight requests from the Vercel frontend succeed.
+    allow_headers=["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"],
+    max_age=600,
 )
 
 

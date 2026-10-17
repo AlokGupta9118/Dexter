@@ -13,7 +13,7 @@ import "./my-space.css";
 import { errorMessage, normalizeConversations, readItems } from "./lib/workspace";
 import type { Conversation, Json, Memory, Message, Mode, Page } from "./types/workspace";
 
-const API = (import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
+const API = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://127.0.0.1:8000" : "")).replace(/\/+$/, "");
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -71,6 +71,10 @@ export default function App() {
     path: string,
     init: RequestInit = {}
   ): Promise<T> => {
+    if (!API) {
+      throw new Error("Backend URL is not configured. Set VITE_API_BASE_URL in Vercel Environment Variables and redeploy.");
+    }
+
     const currentUser = auth?.currentUser;
 
     if (!currentUser) {
