@@ -20,8 +20,8 @@ class Settings(BaseSettings):
     # Set CORS_ORIGINS in Render to your stable Vercel production URL(s),
     # comma-separated. The current deployment URL is included as a fallback.
     cors_origins: str = (
-        "http://localhost:5173,"
-        "https://dexter-1xmv8tm11-alokguptas-projects.vercel.app"
+        "http://localhost:5173,",
+       "https://dexter-ke0enb77a-alokguptas-projects.vercel.app"
     )
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
